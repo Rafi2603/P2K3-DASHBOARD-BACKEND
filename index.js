@@ -516,6 +516,113 @@ router.delete("/deleterekap", async (req, res) => {
     }
 });
 
+// ROUTING TABEL PERSONEL K3
+// GET Kecelakaan Kerja
+router.get('/getkecelakaankerja', async (req, res) => {
+    try {
+        const result = await db.query('SELECT * FROM kecelakaan_kerja ORDER BY tanggal DESC');
+        res.status(200).json({ message: 'Data Found', data: result.rows });
+    } catch (error) {
+        console.error('Error fetching data:', error);
+        res.status(500).json({ message: 'Error fetching data' });
+    }
+});
+
+// ADD Kecelakaan Kerja
+router.post('/addkecelakaankerja', async (req, res) => {
+    const {
+        tanggal,
+        nik,
+        nama,
+        jabatan,
+        unit,
+        tempat_kejadian,
+        kategori_kecelakaan,
+        tindak_lanjut,
+        perawatan_rs,
+        keterangan
+    } = req.body;
+
+    if (!tanggal || !nama || !kategori_kecelakaan) {
+        return res.status(400).json({ message: 'Tanggal, Nama, dan Kategori Kecelakaan wajib diisi' });
+    }
+
+    try {
+        await db.query(
+            `INSERT INTO kecelakaan_kerja (tanggal, nik, nama, jabatan, unit, tempat_kejadian, kategori_kecelakaan, tindak_lanjut, perawatan_rs, keterangan)
+             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)`,
+            [tanggal, nik, nama, jabatan, unit, tempat_kejadian, kategori_kecelakaan, tindak_lanjut, perawatan_rs, keterangan]
+        );
+        res.status(201).json({ message: 'Data kecelakaan kerja berhasil ditambahkan' });
+    } catch (error) {
+        console.error('Error inserting data:', error);
+        res.status(500).json({ message: 'Error inserting data' });
+    }
+});
+
+// UPDATE Kecelakaan Kerja
+router.put('/updatekecelakaan', async (req, res) => {
+    const {
+        kecelakaankerja_id,
+        tanggal,
+        nik,
+        nama,
+        jabatan,
+        unit,
+        tempat_kejadian,
+        kategori_kecelakaan,
+        tindak_lanjut,
+        perawatan_rs,
+        keterangan
+    } = req.body;
+
+    if (!kecelakaankerja_id || !tanggal || !nama || !kategori_kecelakaan) {
+        return res.status(400).json({ message: 'Semua field wajib diisi' });
+    }
+
+    try {
+        const result = await db.query(
+            `UPDATE kecelakaan_kerja
+             SET tanggal = $1, nik = $2, nama = $3, jabatan = $4, unit = $5, tempat_kejadian = $6, kategori_kecelakaan = $7, tindak_lanjut = $8, perawatan_rs = $9, keterangan = $10
+             WHERE kecelakaankerja_id = $11 RETURNING *`,
+            [tanggal, nik, nama, jabatan, unit, tempat_kejadian, kategori_kecelakaan, tindak_lanjut, perawatan_rs, keterangan, kecelakaankerja_id]
+        );
+
+        if (result.rowCount === 0) {
+            return res.status(404).json({ message: 'Data tidak ditemukan' });
+        }
+
+        res.status(200).json({ message: 'Data kecelakaan kerja berhasil diperbarui', data: result.rows[0] });
+    } catch (error) {
+        console.error('Error updating data:', error);
+        res.status(500).json({ message: 'Error updating data' });
+    }
+});
+
+// DELETE Kecelakaan Kerja
+router.delete('/deletekecelakaan', async (req, res) => {
+    const { kecelakaankerja_id } = req.body;
+
+    if (!kecelakaankerja_id) {
+        return res.status(400).json({ message: 'ID Kecelakaan Kerja wajib diisi' });
+    }
+
+    try {
+        const result = await db.query(
+            'DELETE FROM kecelakaan_kerja WHERE kecelakaankerja_id = $1 RETURNING *',
+            [kecelakaankerja_id]
+        );
+
+        if (result.rowCount === 0) {
+            return res.status(404).json({ message: 'Data tidak ditemukan' });
+        }
+
+        res.status(200).json({ message: 'Data kecelakaan kerja berhasil dihapus', data: result.rows[0] });
+    } catch (error) {
+        console.error('Error deleting data:', error);
+        res.status(500).json({ message: 'Error deleting data' });
+    }
+});
 
 // ROUTE SESSION
 router.get('/session', (req, res) => {
